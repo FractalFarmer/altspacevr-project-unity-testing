@@ -7,8 +7,14 @@ namespace Complete
         public float m_DampTime = 0.2f;                 // Approximate time for the camera to refocus.
         public float m_ScreenEdgeBuffer = 4f;           // Space between the top/bottom most target and the screen edge.
         public float m_MinSize = 6.5f;                  // The smallest orthographic size the camera can be.
-        [HideInInspector] public Transform[] m_Targets; // All the targets the camera needs to encompass.
+		[HideInInspector] public Transform[] m_Targets; // All the targets the camera needs to encompass. 
 
+		/* [HideInInspector] */ public float m_SampleRate = 1.0f;  // framerate poll rate.
+		/* [HideInInspector] */ public float m_CurrentSceneFPS = 0.0000f;  // The current FPS.
+		/* [HideInInspector] */ public float m_ExpectedSceneFPS = 0.0500f;  // Expected FPS.
+		/* [HideInInspector] */ public bool m_TargetsInView = false; // This is true when all of the targets are visible. If one falls off, it reports false.
+		/* [HideInInspector] */ public bool m_AllTargetsInView = true; // This is set false any time m_TargetsInView is false. It is polled at the end if the test by the Assert component. Should be an array.
+		/* [HideInInspector] */ public static bool m_TargetsExpectedInView = true; //If we expect the targets to always be in the camera view
 
         private Camera m_Camera;                        // Used for referencing the camera.
         private float m_ZoomSpeed;                      // Reference speed for the smooth damping of the orthographic size.
@@ -24,7 +30,13 @@ namespace Complete
 
         private void FixedUpdate ()
         {
-            // Move the camera towards a desired position.
+			// Get the framerate and update m_CurrentSceneFPS
+			GetFPS ();
+
+			// Parse the targets list and verify that the targets are in view. 
+			VerifyTargetsInView ();
+
+			// Move the camera.
             Move ();
 
             // Change the size of the camera based.
@@ -116,6 +128,32 @@ namespace Complete
             return size;
         }
 
+		// Assign current FPS to current FPS variable. Made this a public function so that the FPS may be exposed to other scripts for testing & dev.
+		// My preference is be to stick this in a separate library.
+		public void GetFPS ()
+		{
+			m_CurrentSceneFPS = m_SampleRate/Time.deltaTime; // Get the current framerate and assign it to public float 'm_CurrentSceneFPS' for use in testing.
+		}
+
+		// Parse the targets list and verify that the targets are in view. 
+		public void VerifyTargetsInView ()
+		{
+			for (int i = 0; i < m_Targets.Length; i++) 
+			{
+				// If they aren't active continue on to the next target.
+				if (!m_Targets[i].gameObject.activeSelf) 
+					continue;
+
+				// The code from the Unity3d Answers forum that I used: http://answers.unity3d.com/answers/1031557/view.html
+				Vector3 screenpoint = m_Camera.WorldToViewportPoint(m_Targets [i].position); // Converts target position to camera space
+				m_TargetsInView = screenpoint.z > 0 && screenpoint.x > 0 && screenpoint.x < 1 && screenpoint.y > 0 && screenpoint.y < 1; // sets the public boolean 'm_TargetsInView' to true or false to access during testing
+
+				if (m_TargetsInView == false) // If any of the targets are out of range
+				{
+					m_AllTargetsInView = false; // Set the polling flag to false
+				}
+			}
+		}
 
         public void SetStartPositionAndSize ()
         {

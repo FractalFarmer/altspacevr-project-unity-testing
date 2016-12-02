@@ -14,7 +14,6 @@ namespace Complete
         public Text m_MessageText;                  // Reference to the overlay Text to display winning text, etc.
         public GameObject m_TankPrefab;             // Reference to the prefab the players will control.
         public TankManager[] m_Tanks;               // A collection of managers for enabling and disabling different aspects of the tanks.
-
         
         private int m_RoundNumber;                  // Which round the game is currently on.
         private WaitForSeconds m_StartWait;         // Used to have a delay whilst the round starts.
@@ -29,7 +28,7 @@ namespace Complete
             m_StartWait = new WaitForSeconds (m_StartDelay);
             m_EndWait = new WaitForSeconds (m_EndDelay);
 
-            SpawnAllTanks();
+			SpawnAllTanks();
             SetCameraTargets();
 
             // Once the tanks have been created and the camera is using them as targets, start the game.
@@ -108,6 +107,11 @@ namespace Complete
             m_RoundNumber++;
             m_MessageText.text = "ROUND " + m_RoundNumber;
 
+			/* if (UnityEditor.EditorApplication.isPaused) // && (TestMode == true)
+				{				
+					UnityEditor.EditorApplication.      // isPlaying = true;
+				} */
+			
             // Wait for the specified length of time until yielding control back to the game loop.
             yield return m_StartWait;
         }
